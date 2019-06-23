@@ -197,5 +197,28 @@ router.get("/cliente",(req, res) => {
   });
 });
 
+/*router.get("/cliente", (req, res, ) =>{
+  Cliente.find({}).exec((error, docs) => {
+
+    res.status(200).json({
+      "msn" : "No existe el pedido "
+    });
+  });
+});*/
+
+router.get(/cliente\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  Cliente.findOne({_id : id}).exec( (error, docs) => {
+    if (docs != null) {
+        res.status(200).json(docs);
+        return;
+    }
+
+    res.status(200).json({
+      "msn" : "No existe el pedido "
+    });
+  })
+});
 
 module.exports = router;
