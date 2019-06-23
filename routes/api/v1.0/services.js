@@ -299,6 +299,61 @@ router.put(/cliente\/[a-z0-9]{1,}$/, (req, res) => {
   });
 });
 
+/*CARGAR IMAGENES*/
 
+router.post(/productoimg\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  upload(req, res, (err) => {
+    if (err) {
+      res.status(500).json({
+        "msn" : "No se ha podido subir la imagen"
+      });
+    } else {
+      var ruta = req.file.path.substr(6, req.file.path.length);
+      console.log(ruta);
+      var img = {
+        idProducto: req.body.idProducto,
+        name : req.file.originalname,
+        physicalpath: req.file.path,
+        relativepath: "http://localhost:8000" + ruta
+      };
+      var imgData = new Img(img);
+      imgData.save().then( (infoimg) => {
+        //content-type
+        //Update User IMG
+        var producto = {
+          fotolugar: new Array()
+        }
+        Producto.findOne({_id:id}).exec( (err, docs) =>{
+          //console.log(docs);
+          var data = docs.fotolugar;
+          console.log('data ', data);
+
+          var aux = new  Array();
+          if (data.length == 1 && data[0] == "") {
+            Producto.fotolugar.push("/api/v1.0/productoimg/" + infoimg._id)
+          } else {
+            aux.push("/api/v1.0/productoimg/" + infoimg._id);
+            data = data.concat(aux);
+            Producto.fotolugar = data;
+          }
+          Producto.findOneAndUpdate({_id : id}, producto, (err, params) => {
+              if (err) {
+                res.status(500).json({
+                  "msn" : "error en la actualizacion del usuario"
+                });
+                return;
+              }
+              res.status(200).json(
+                req.file
+              );
+              return;
+          });
+        });
+      });
+    }
+  });
+});
 
 module.exports = router;
