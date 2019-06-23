@@ -117,4 +117,45 @@ router.patch(/producto\/[a-z0-9]{1,}$/, (req, res) => {
   });
 });
 
+//Actualiza los datos del Producto
+router.put(/producto\/[a-z0-9]{1,}$/, verifytoken,(req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  var keys  = Object.keys(req.body);
+  var oficialkeys = ['nombre', 'nit', 'propiedad', 'calle', 'telefono', 'lat', 'lon'];
+  var result = _.difference(oficialkeys, keys);
+  if (result.length > 0) {
+    res.status(400).json({
+      "msn" : "error nose puede  actualizar  utilice patch  para la actualizar"
+    });
+    return;
+  }
+
+  var producto = {
+    nombre : req.body.Nombre,
+    nit : req.body.Nit,
+    propiedad : req.body.Propiedad,
+    calle : req.body.Calle,
+    telefono : req.body.Telefono,
+    lat : req.body.Lat,
+    lon : req.body.Lon
+
+  };
+  Producto.findOneAndUpdate({_id: id}, producto, (err, params) => {
+      if(err) {
+        res.status(500).json({
+          "msn": "Error no se pudo actualizar los datos"
+        });
+        return;
+      }
+      res.status(200).json({
+        "resp": 200,
+        "dato": producto,
+        "msn" :  "Producto editado con exito"
+      });
+      return;
+  });
+});
+/*Producto*/
+
 module.exports = router;
