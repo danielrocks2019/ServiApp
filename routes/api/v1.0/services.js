@@ -73,6 +73,28 @@ router.post("/login", (req, res, next) => {
   });
 });
 
+//Middelware
+function verifytoken (req, res, next) {
+  //Recuperar el header
+  const header = req.headers["authorization"];
+  if (header  == undefined) {
+      res.status(403).json({
+        msn: "No autorizado"
+      })
+  } else {
+      req.token = header.split(" ")[1];
+      jwt.verify(req.token, "secretkey123", (err, authData) => {
+        if (err) {
+          res.status(403).json({
+            msn: "No autorizado"
+          })
+        } else {
+          next();
+        }
+      });
+  }
+}
+
 /*Producto*/
 
 
