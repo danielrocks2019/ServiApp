@@ -174,5 +174,28 @@ router.post("/cliente",  (req, res) => {
   });
 });
 
+router.get("/cliente",(req, res) => {
+  var skip = 0;
+  var limit = 10;
+  if (req.query.skip != null) {
+    skip = req.query.skip;
+  }
+
+  if (req.query.limit != null) {
+    limit = req.query.limit;
+  }
+  Cliente.find({}).skip(skip).limit(limit).exec((err, docs) => {
+    if (err) {
+      res.status(500).json({
+        "msn" : "Error en la db"
+      });
+      return;
+    }
+    res.json({
+      result : docs
+    });
+  });
+});
+
 
 module.exports = router;
