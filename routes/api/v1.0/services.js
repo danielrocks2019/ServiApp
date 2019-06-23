@@ -8,6 +8,70 @@ var Img = require("../../../database/collections/img");
 var Producto = require("../../../database/collections/../../database/collections/producto");
 var Cliente = require("../../../database/collections/../../database/collections/cliente");
 
+const storage = multer.diskStorage({
+  destination: function (res, file, cb) {
+      try {
+          fs.statSync('./public/avatars');
+      } catch (e) {
+          fs.mkdirSync('./public/avatars');
+      }
+
+      cb(null, './public/avatars');
+  },
+  filename: (res, file, cb) => {
+
+      cb(null, 'IMG-' + Date.now() + path.extname(file.originalname))
+  }
+})
+
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype === 'image/png' || file.mimetype === 'image/jpeg') {
+      return cb(null, true);
+  }
+  return cb(new Error('Solo se admiten imagenes png y jpg jpeg'));
+}
+
+const upload = multer({
+  storage: storage,
+  //fileFilter: fileFilter,
+  /*limits: {
+      fileSize: 1024 * 1024 * 5
+  }*/
+})
+
+/*
+Login USER
+*/
+router.post("/login", (req, res, next) => {
+  var email = req.body.email;
+  var password = req.body.password;
+  var result = Cliente.findOne({email: email,password: password}).exec((err, doc) => {
+    if (err) {
+      res.status(300).json({
+        msn : "No se puede concretar con la peticion "
+      });
+      return;
+    }
+    console.log(doc);
+    if (doc) {
+       console.log(result);
+      //res.status(200).json(doc);
+      jwt.sign({name: doc.email, password: doc.password}, "secretkey123", (err, token) => {
+          console.log(result);
+          res.status(200).json({
+            resp:200,
+            token : token,
+            dato:doc
+          });
+      })
+    } else {
+      res.status(400).json({
+        resp: 400,
+        msn : "El usuario no existe ne la base de datos"
+      });
+    }
+  });
+});
 
 /*Producto*/
 
@@ -375,34 +439,5 @@ router.get(/productimg\/[a-z0-9]{1,}$/, (req, res) => {
   });
 });
 
-const storage = multer.diskStorage({
-  destination: function (res, file, cb) {
-      try {
-          fs.statSync('./public/avatars');
-      } catch (e) {
-          fs.mkdirSync('./public/avatars');
-      }
 
-      cb(null, './public/avatars');
-  },
-  filename: (res, file, cb) => {
-
-      cb(null, 'IMG-' + Date.now() + path.extname(file.originalname))
-  }
-})
-
-const fileFilter = (req, file, cb) => {
-  if (file.mimetype === 'image/png' || file.mimetype === 'image/jpeg') {
-      return cb(null, true);
-  }
-  return cb(new Error('Solo se admiten imagenes png y jpg jpeg'));
-}
-
-const upload = multer({
-  storage: storage,
-  //fileFilter: fileFilter,
-  /*limits: {
-      fileSize: 1024 * 1024 * 5
-  }*/
-})
 module.exports = router;
