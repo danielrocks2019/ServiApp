@@ -69,4 +69,29 @@ router.get(/producto\/[a-z0-9]{1,}$/, (req, res) => {
   })
 });
 
+//elimina un producto
+/*router.delete(/producto\/[a-z0-9]{1,}$/, verifytoken, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  Producto.find({_id : id}).remove().exec( (err, docs) => {
+      res.status(200).json(docs);
+  });
+});*/
+router.delete('/producto/:id',  (req, res, )=> {
+  var idProducto = req.params.id;
+
+  Producto.findByIdAndRemove(idProducto).exec()
+      .then(() => {
+        res.status(200).json({
+          "resp": 200,
+          "msn" :  " Producto eliminado con exito"
+        });
+      }).catch(err => {
+          res.status(500).json({
+              error: err
+          });
+      });
+
+
+});
 module.exports = router;
