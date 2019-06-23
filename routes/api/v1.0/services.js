@@ -52,6 +52,21 @@ router.get("/producto",  (req, res) => {
   });
 });
 
+//mostrar  por id los productos
+router.get(/producto\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  Producto.findOne({_id : id}).exec( (error, docs) => {
+    if (docs != null) {
+        res.status(200).json(docs);
+        return;
+    }
 
+  res.json({
+    result : docs
+
+    });
+  })
+});
 
 module.exports = router;
