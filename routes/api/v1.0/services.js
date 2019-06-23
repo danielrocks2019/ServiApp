@@ -158,4 +158,21 @@ router.put(/producto\/[a-z0-9]{1,}$/, verifytoken,(req, res) => {
 });
 /*Producto*/
 
+/*CLIENTE*/
+router.post("/cliente",  (req, res) => {
+
+
+  var data = req.body;
+  data ["registerdate"] = new Date();
+  var newcliente = new Cliente(data);
+  newcliente.save().then((rr) =>{
+    res.status(200).json({
+      "resp": 200,
+      "dato": newcliente,
+      "msn" :  "cliente  agregado con exito"
+    });
+  });
+});
+
+
 module.exports = router;
