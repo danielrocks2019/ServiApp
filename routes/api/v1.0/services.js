@@ -374,4 +374,35 @@ router.get(/productimg\/[a-z0-9]{1,}$/, (req, res) => {
     res.status(200).send(img);
   });
 });
+
+const storage = multer.diskStorage({
+  destination: function (res, file, cb) {
+      try {
+          fs.statSync('./public/avatars');
+      } catch (e) {
+          fs.mkdirSync('./public/avatars');
+      }
+
+      cb(null, './public/avatars');
+  },
+  filename: (res, file, cb) => {
+
+      cb(null, 'IMG-' + Date.now() + path.extname(file.originalname))
+  }
+})
+
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype === 'image/png' || file.mimetype === 'image/jpeg') {
+      return cb(null, true);
+  }
+  return cb(new Error('Solo se admiten imagenes png y jpg jpeg'));
+}
+
+const upload = multer({
+  storage: storage,
+  //fileFilter: fileFilter,
+  /*limits: {
+      fileSize: 1024 * 1024 * 5
+  }*/
+})
 module.exports = router;
