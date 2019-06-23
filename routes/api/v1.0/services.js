@@ -221,4 +221,15 @@ router.get(/cliente\/[a-z0-9]{1,}$/, (req, res) => {
   })
 });
 
+//elimina un cliente  ==> funciona
+router.delete(/cliente\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  Cliente.find({_id : id}).remove().exec( (err, docs) => {
+    res.json({
+        message: "cliente eliminado"
+        });
+  });
+});
+
 module.exports = router;
