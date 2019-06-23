@@ -94,4 +94,27 @@ router.delete('/producto/:id',  (req, res, )=> {
 
 
 });
+
+//Actualizar solo x elementos
+router.patch(/producto\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  var keys = Object.keys(req.body);
+  var producto = {};
+  for (var i = 0; i < keys.length; i++) {
+    producto[keys[i]] = req.body[keys[i]];
+  }
+  console.log(producto);
+  Producto.findOneAndUpdate({_id: id}, producto, (err, params) => {
+      if(err) {
+        res.status(500).json({
+          "msn": "Error no se pudo actualizar los datos"
+        });
+        return;
+      }
+      res.status(200).json(params);
+      return;
+  });
+});
+
 module.exports = router;
