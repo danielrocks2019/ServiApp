@@ -535,4 +535,58 @@ var upload = multer({
   storage: storage
 }).single("img");;
 
+router.post(/pruebalimg\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  upload(req, res, (err) => {
+    if (err) {
+      res.status(500).json({
+        "msn" : "No se ha podido subir la imagen"
+      });
+    } else {
+      var ruta = req.file.path.substr(6, req.file.path.length);
+      console.log(ruta);
+      var limg = {
+        idprueba: id,
+        name : req.file.originalname,
+        physicalpath: req.file.path,
+        relativepath: "http://localhost:8000" + ruta
+      };
+      var limgData = new Limg(limg);
+      limgData.save().then( (infolimg) => {
+        //content-type
+        //Update User IMG
+        var prueba = {
+          image: new Array()
+        }
+        Prueba.findOne({_id:id}).exec( (err, docs) =>{
+          //console.log(docs);
+          var data = docs.image;
+          var aux = new  Array();
+          if (data.length == 1 && data[0] == "") {
+            prueba.image.push("/api/v1.0/pruebalimg/" + infolimg._id)
+          } else {
+            aux.push("/api/v1.0/pruebalimg/" + infolimg._id);
+            data = data.concat(aux);
+            prueba.image = data;
+          }
+          Prueba.findOneAndUpdate({_id : id}, prueba, (err, params) => {
+              if (err) {
+                res.status(500).json({
+                  "msn" : "error en la actualizacion del usuario"
+                });
+                return;
+              }
+              res.status(200).json(
+                req.file
+              );
+              return;
+          });
+        });
+      });
+    }
+  });
+});
+
+
 module.exports = router;
