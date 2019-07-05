@@ -588,5 +588,24 @@ router.post(/pruebalimg\/[a-z0-9]{1,}$/, (req, res) => {
   });
 });
 
+router.get(/pruebalimg\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  console.log(id)
+  Limg.findOne({_id: id}).exec((err, docs) => {
+    if (err) {
+      res.status(500).json({
+        "msn": "Sucedio algun error en el servicio"
+      });
+      return;
+    }
+    //regresamos la imagen deseada
+    var limg = fs.readFileSync("./" + docs.physicalpath);
+    //var img = fs.readFileSync("./public/avatars/img.jpg");
+    res.contentType('image/jpeg');
+    res.status(200).send(limg);
+  });
+});
+
 
 module.exports = router;
