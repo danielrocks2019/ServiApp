@@ -626,4 +626,22 @@ router.get('/filtro_pro', (req, res, next)=>{
   })
 });
 
+router.get('/filtro_pro', (req, res, next)=>{
+  var params = req.query;
+  var propietario = params.propietario;
+  console.log("-->"+propietario);
+  Producto.find({$or : [{propietario : propietario }] }).exec((err, docs) =>{
+    if (docs){
+      res.status(200).json({
+        info: docs
+      });
+    }
+    else {
+      res.status(201).json({
+        "msn" : "no existe producto con ese nombre de propietario"
+      });
+    }
+  })
+});
+
 module.exports = router;
