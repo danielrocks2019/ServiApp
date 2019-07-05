@@ -607,5 +607,23 @@ router.get(/pruebalimg\/[a-z0-9]{1,}$/, (req, res) => {
   });
 });
 
+//buscador de productos
+router.get('/filtro_pro', (req, res, next)=>{
+  var params = req.query;
+  var nombre = params.nombre;
+  console.log("-->"+nombre);
+  Producto.find({$or : [{nombre : nombre }] }).exec((err, docs) =>{
+    if (docs){
+      res.status(200).json({
+        info: docs
+      });
+    }
+    else {
+      res.status(201).json({
+        "msn" : "no existe producto con ese nombre"
+      });
+    }
+  })
+});
 
 module.exports = router;
