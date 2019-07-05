@@ -8,7 +8,10 @@ var Img = require("../../../database/collections/img");
 var Producto = require("../../../database/collections/../../database/collections/producto");
 var Cliente = require("../../../database/collections/../../database/collections/cliente");
 
-const storage = multer.diskStorage({
+var Prueba = require("../../../database/collections/../../database/collections/pruebas");
+var Limg = require("../../../database/collections/../../database/collections/limg");
+
+/*const storage = multer.diskStorage({
   destination: function (res, file, cb) {
       try {
           fs.statSync('./public/avatars');
@@ -22,7 +25,7 @@ const storage = multer.diskStorage({
 
       cb(null, 'IMG-' + Date.now() + path.extname(file.originalname))
   }
-})
+})*/
 
 const fileFilter = (req, file, cb) => {
   if (file.mimetype === 'image/png' || file.mimetype === 'image/jpeg') {
@@ -31,14 +34,14 @@ const fileFilter = (req, file, cb) => {
   return cb(new Error('Solo se admiten imagenes png y jpg jpeg'));
 }
 
-const upload = multer({
+/*const upload = multer({
   storage: storage,
   //fileFilter: fileFilter,
   /*limits: {
       fileSize: 1024 * 1024 * 5
-  }*/
+  }
 })
-
+*/
 /*
 Login USER
 */
@@ -439,25 +442,6 @@ router.post(/productoimg\/[a-z0-9]{1,}$/, (req, res) => {
         });
       });
     }
-  });
-});
-/*GET IMgen*/
-router.get(/productimg\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  console.log(id)
-  Img.findOne({_id: id}).exec((err, docs) => {
-    if (err) {
-      res.status(500).json({
-        "msn": "Sucedio algun error en el servicio"
-      });
-      return;
-    }
-    //regresamos la imagen deseada
-    var img = fs.readFileSync("./" + docs.physicalpath);
-    //var img = fs.readFileSync("./public/avatars/img.jpg");
-    res.contentType('image/jpeg');
-    res.status(200).send(img);
   });
 });
 
