@@ -465,4 +465,26 @@ router.get(/productimg\/[a-z0-9]{1,}$/, (req, res) => {
   });
 });
 
+//prueba lab Imagenes
+router.post('/prueba', (req, res)=> {
+  if(req.body.name == "" && req.body.email == ""){
+    res.status(400).json({
+      "msn" : "formato incorrecto"
+    });
+    return;
+  }
+  var prueba = {
+    title : req.body.title,
+    descripcion : req.body.descripcion, //descripcion a nombre
+    image : ""
+  };
+  var pruebaData = new Prueba(prueba);
+  pruebaData.save().then( (rr)=>{
+    req.status(200).json({
+      "id" : rr._id,
+      "msn" : "Comprador registrado"
+    });
+  });
+});
+
 module.exports = router;
