@@ -514,4 +514,25 @@ router.get('/prueba',(req,res)=>{
   });
 });
 
+router.delete(/\/[a-z0-9]{1,}$/,(req,res)=>{
+  var url = req.url;
+  var id = url.split("/")[1];
+  Prueba.find({_id : id}).remove().exec((err,docs)=>{
+    req.status(200).json(docs);
+  });
+});
+
+var storage = multer.diskStorage({
+  destination: "./public/avatarspr",
+  filename: function (req, file,cb){
+    console.log("-------------");
+    console.log(file);
+    cb(null, "IMG_" + Date.now() + ".jpg");
+  }
+});
+
+var upload = multer({
+  storage: storage
+}).single("img");;
+
 module.exports = router;
