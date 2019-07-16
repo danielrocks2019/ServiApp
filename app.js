@@ -1,31 +1,44 @@
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
-var cookieParser = require('cookie-parser');
+var favicon = require('serve-favicon');
 var logger = require('morgan');
+var cookieParser = require('cookie-parser');
+var bodyParser = require('body-parser');
+http = require('http');
 
-var indexRouter = require('./routes/index');
+var index = require('./routes/index');
+var usersRouter = require('./routes/users');
 var service = require('./routes/api/v1.0/services');
-//var usersRouter = require('./routes/users');
+var mensajeRouter = require('./routes/mensaje');
+
 
 var app = express();
+
+
+//Chat
+app.use('/users', usersRouter);
+app.use('/mensaje', mensajeRouter);
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
+// uncomment after placing your favicon in /public
+//app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/api/v1.0/', service); //v1.0--api--indexRouter
-//app.use('/', index); //indexRouter
-//app.use('/users', usersRouter);
 
+app.use('/', index);
+app.use('/api/v1.0/', service);
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
-  next(createError(404));
+  var err = new Error('Not Found');
+  err.status = 404;
+  next(err);
 });
 
 // error handler
@@ -39,8 +52,20 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-const port = 8000;
-app.listen(port,() =>{
-  console.log("RUNING SERVER IN THE PORT " + port);
-});
+//chat
+/*var server = http.createServer(app);
+var io = require('socket.io').listen(server);
+var chatIoMethods = require('./routes/chat');
+io.on('connection', chatIoMethods);*/
+
+//chat server
+
+
+
+
 module.exports = app;
+var port = 9000;
+app.listen(port, () => {
+  console.log("server running in " + port);
+});
+

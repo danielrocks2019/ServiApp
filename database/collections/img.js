@@ -3,7 +3,7 @@ var mon = require('mongoose');
  var Schema = mon.Schema;
 var imgSchema = new Schema({
   name : String,
-  idProducto: String,
+  idrestaurant: String,
   physicalpath : String,
   relativepath : String
 });

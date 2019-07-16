@@ -1,11 +1,6 @@
-#!/usr/bin/env node
-
-/**
- * Module dependencies.
- */
 
 var app = require('../app');
-var debug = require('debug')('dokerizenodemongo:server');
+var debug = require('debug')('apirestsalud:server');
 var http = require('http');
 
 /**

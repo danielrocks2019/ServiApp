@@ -1,17 +1,24 @@
 var express = require('express');
 const multer = require('multer');
+var io = require('socket.io');
 var router = express.Router();
 var fs = require('fs');
 var _ = require("underscore");
 
 var Img = require("../../../database/collections/img");
-var Producto = require("../../../database/collections/../../database/collections/producto");
+
+var Categoria = require("../../../database/collections/categoria");
+var Producto = require("../../../database/collections/producto");
+var Tienda = require("../../../database/collections/tienda");
 var Cliente = require("../../../database/collections/../../database/collections/cliente");
+var Users = require("../../../database/collections/../../database/collections/users");
+var Detalle = require("../../../database/collections/../../database/collections/detalle");
+//var Mensaje = require("../../../database/collections/mensaje");
 
-var Prueba = require("../../../database/collections/../../database/collections/pruebas");
-var Limg = require("../../../database/collections/../../database/collections/limg");
+var jwt = require("jsonwebtoken");
 
-/*const storage = multer.diskStorage({
+
+const storage = multer.diskStorage({
   destination: function (res, file, cb) {
       try {
           fs.statSync('./public/avatars');
@@ -25,7 +32,7 @@ var Limg = require("../../../database/collections/../../database/collections/lim
 
       cb(null, 'IMG-' + Date.now() + path.extname(file.originalname))
   }
-})*/
+})
 
 const fileFilter = (req, file, cb) => {
   if (file.mimetype === 'image/png' || file.mimetype === 'image/jpeg') {
@@ -34,17 +41,11 @@ const fileFilter = (req, file, cb) => {
   return cb(new Error('Solo se admiten imagenes png y jpg jpeg'));
 }
 
-/*const upload = multer({
+const upload = multer({
   storage: storage,
-  //fileFilter: fileFilter,
-  /*limits: {
-      fileSize: 1024 * 1024 * 5
-  }
+  
 })
-*/
-/*
-Login USER
-*/
+
 router.post("/login", (req, res, next) => {
   var email = req.body.email;
   var password = req.body.password;
@@ -75,8 +76,7 @@ router.post("/login", (req, res, next) => {
     }
   });
 });
-
-//Middelware
+// instalar Middelware con npm install
 function verifytoken (req, res, next) {
   //Recuperar el header
   const header = req.headers["authorization"];
@@ -98,26 +98,94 @@ function verifytoken (req, res, next) {
   }
 }
 
-/*Producto*/
+router.post(/tiendaimg\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  upload(req, res, (err) => {
+    if (err) {
+      res.status(500).json({
+        "msn" : "No se ha podido subir la imagen"
+      });
+    } else {
+      var ruta = req.file.path.substr(6, req.file.path.length);
+      console.log(ruta);
+      var img = {
+        idtienda: req.body.idtienda,
+        name : req.file.originalname,
+        physicalpath: req.file.path,
+        relativepath: "http://localhost:9000" + ruta
+      };
+      var imgData = new Img(img);
+      imgData.save().then( (infoimg) => {
+       var tienda = {
+          fotolugar: new Array()
+        }
+        Tienda.findOne({_id:id}).exec( (err, docs) =>{
+          //console.log(docs);
+          var data = docs.fotolugar;
+          console.log('data ', data);
 
+          var aux = new  Array();
+          if (data.length == 1 && data[0] == "") {
+            Tienda.fotolugar.push("/api/v1.0/tiendaimg/" + infoimg._id)
+          } else {
+            aux.push("/api/v1.0/tiendaimg/" + infoimg._id);
+            data = data.concat(aux);
+            Tienda.fotolugar = data;
+          }
+          Tienda.findOneAndUpdate({_id : id}, tienda, (err, params) => {
+              if (err) {
+                res.status(500).json({
+                  "msn" : "error en la actualizacion del usuario"
+                });
+                return;
+              }
+              res.status(200).json(
+                req.file
+              );
+              return;
+          });
+        });
+      });
+    }
+  });
+});
+router.get(/tiendaimg\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  console.log(id)
+  Img.findOne({_id: id}).exec((err, docs) => {
+    if (err) {
+      res.status(500).json({
+        "msn": "Sucedio algun error en el servicio"
+      });
+      return;
+    }
+    //regresamos la imagen deseada
+    var img = fs.readFileSync("./" + docs.physicalpath);
+    //var img = fs.readFileSync("./public/avatars/img.jpg");
+    res.contentType('image/jpeg');
+    res.status(200).send(img);
+  });
+});
 
-router.post("/producto", (req, res) => {
+/*tienda*/
+router.post("/tienda", (req, res) => {
 
   //Ejemplo de validacion
   var data = req.body;
   data ["registerdate"] = new Date();
-  var newproducto = new Producto(data);
-  newproducto.save().then((rr) =>{
+  var newtienda = new Tienda(data);
+  newtienda.save().then((rr) =>{
     res.status(200).json({
       "resp": 200,
-      "dato": newproducto,
+      "dato": newtienda,
       "id" : rr._id,
-      "msn" :  "Producto agregado con exito"
+      "msn" :  "Tiendae agregado con exito"
     });
   });
 });
-
-router.get("/producto",  (req, res) => {
+router.get("/Tienda",  (req, res) => {
   var skip = 0;
   var limit = "";
   if (req.query.skip != null) {
@@ -127,12 +195,12 @@ router.get("/producto",  (req, res) => {
   if (req.query.limit != null) {
     limit = req.query.limit;
   }
-  Producto.find({}).skip(skip).limit(limit).exec((err, docs) => {
+  Tienda.find({}).skip(skip).limit(limit).exec((err, docs) => {
     if (err) {
       res.status(500).json({
         "msn" : "Error en la db"
       });
-
+      
       return;
     }
     res.json({
@@ -141,11 +209,13 @@ router.get("/producto",  (req, res) => {
   });
 });
 
-//mostrar  por id los productos
-router.get(/producto\/[a-z0-9]{1,}$/, (req, res) => {
+
+
+//mostrar  por id los Tienda
+router.get(/tienda\/[a-z0-9]{1,}$/, (req, res) => {
   var url = req.url;
   var id = url.split("/")[2];
-  Producto.findOne({_id : id}).exec( (error, docs) => {
+  Tienda.findOne({_id : id}).exec( (error, docs) => {
     if (docs != null) {
         res.status(200).json(docs);
         return;
@@ -153,27 +223,18 @@ router.get(/producto\/[a-z0-9]{1,}$/, (req, res) => {
 
   res.json({
     result : docs
-
+  
     });
   })
 });
+router.delete('/tienda/:id',  (req, res, )=> {
+  var idTienda = req.params.id;
 
-//elimina un producto
-/*router.delete(/producto\/[a-z0-9]{1,}$/, verifytoken, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  Producto.find({_id : id}).remove().exec( (err, docs) => {
-      res.status(200).json(docs);
-  });
-});*/
-router.delete('/producto/:id',  (req, res, )=> {
-  var idProducto = req.params.id;
-
-  Producto.findByIdAndRemove(idProducto).exec()
+  Tienda.findByIdAndRemove(idTienda).exec()
       .then(() => {
         res.status(200).json({
           "resp": 200,
-          "msn" :  " Producto eliminado con exito"
+          "msn" :  "eliminado con exito"
         });
       }).catch(err => {
           res.status(500).json({
@@ -184,17 +245,16 @@ router.delete('/producto/:id',  (req, res, )=> {
 
 });
 
-//Actualizar solo x elementos
-router.patch(/producto\/[a-z0-9]{1,}$/, (req, res) => {
+router.patch(/tienda\/[a-z0-9]{1,}$/, (req, res) => {
   var url = req.url;
   var id = url.split("/")[2];
   var keys = Object.keys(req.body);
-  var producto = {};
+  var tienda = {};
   for (var i = 0; i < keys.length; i++) {
-    producto[keys[i]] = req.body[keys[i]];
+    tienda[keys[i]] = req.body[keys[i]];
   }
-  console.log(producto);
-  Producto.findOneAndUpdate({_id: id}, producto, (err, params) => {
+  console.log(tienda);
+  Tienda.findOneAndUpdate({_id: id}, tienda, (err, params) => {
       if(err) {
         res.status(500).json({
           "msn": "Error no se pudo actualizar los datos"
@@ -205,9 +265,8 @@ router.patch(/producto\/[a-z0-9]{1,}$/, (req, res) => {
       return;
   });
 });
-
-//Actualiza los datos del Producto
-router.put(/producto\/[a-z0-9]{1,}$/, verifytoken,(req, res) => {
+//Actualiza los datos del tienda
+router.put(/tienda\/[a-z0-9]{1,}$/, verifytoken,(req, res) => {
   var url = req.url;
   var id = url.split("/")[2];
   var keys  = Object.keys(req.body);
@@ -220,17 +279,17 @@ router.put(/producto\/[a-z0-9]{1,}$/, verifytoken,(req, res) => {
     return;
   }
 
-  var producto = {
+  var tienda = {
     nombre : req.body.Nombre,
     nit : req.body.Nit,
     propiedad : req.body.Propiedad,
     calle : req.body.Calle,
     telefono : req.body.Telefono,
-    lat : req.body.Lat,
+    lat : req.body.Lat, 
     lon : req.body.Lon
 
   };
-  Producto.findOneAndUpdate({_id: id}, producto, (err, params) => {
+  Tienda.findOneAndUpdate({_id: id}, tienda, (err, params) => {
       if(err) {
         res.status(500).json({
           "msn": "Error no se pudo actualizar los datos"
@@ -239,18 +298,188 @@ router.put(/producto\/[a-z0-9]{1,}$/, verifytoken,(req, res) => {
       }
       res.status(200).json({
         "resp": 200,
-        "dato": producto,
-        "msn" :  "Producto editado con exito"
+        "dato": tienda,
+        "msn" :  "tienda editado con exito"
       });
       return;
   });
 });
-/*Producto*/
+/*tienda*/
 
-/*CLIENTE*/
+router.post("/categoria", (req, res) => {
+
+  //Ejemplo de validacion
+  var data = req.body;
+  data ["registerdate"] = new Date();
+  var newcategoria = new Categoria(data);
+  newcategoria.save().then((rr) =>{
+    res.status(200).json({
+      "resp": 200,
+      "dato": newcategoria,
+      "id" : rr._id,
+      "msn" :  "menu  agregado con exito"
+    });
+  });
+});
+router.get("/categoria",(req, res) => {
+  var skip = 0;
+  var limit = 10;
+  if (req.query.skip != null) {
+    skip = req.query.skip;
+  }
+
+  if (req.query.limit != null) {
+    limit = req.query.limit;
+  }
+  Categoria.find({}).skip(skip).limit(limit).exec((err, docs) => {
+    if (err) {
+      res.status(500).json({
+        "msn" : "Error en la db"
+      });
+      return;
+    }
+    res.json({
+      result : docs
+    });
+  });
+});
+
+router.get(/categoria\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  Categoria.findOne({_id : id}).exec( (error, docs) => {
+    if (docs != null) {
+        res.status(200).json(docs);
+        return;
+    }
+
+    res.status(400).json({
+      "respuesta":400,
+      "msn" : "No existe el recurso seleccionado "
+    });
+  })
+});
+
+router.delete('/categoria/:id', (req, res,) => {
+  var idCategoria = req.params.id;
+
+  Categoria.findByIdAndRemove(idCategoria).exec()
+      .then(() => {
+         
+      res.status(200).json({
+        "resp": 200,
+        "msn" :  "eliminado con exito"
+      });
+      }).catch(err => {
+          res.status(500).json({
+              error: err
+         
+            });
+
+      });
+
+
+});
+
+router.patch("/categoria",(req, res) => {
+  var params = req.body;
+  var id = req.query.id;
+  var keys = Object.keys(params);
+  var updatekeys = ["nombre", "precio", "descripcion", "foto"];
+  var newkeys = [];
+  var values = [];
+
+  for (var i  = 0; i < updatekeys.length; i++) {
+    var index = keys.indexOf(updatekeys[i]);
+    if (index != -1) {
+        newkeys.push(keys[index]);
+        values.push(params[keys[index]]);
+    }
+  }
+  var objupdate = {}
+  for (var i  = 0; i < newkeys.length; i++) {
+      objupdate[newkeys[i]] = values[i];
+  }
+  console.log(objupdate);
+  Categoria.findOneAndUpdate({_id: id}, objupdate ,(err, docs) => {
+    if (err) {
+      res.status(500).json({
+          msn: "Existe un error en la base de datos"
+      });
+      return;
+    }
+    res.status(200).json({
+      "resp": 200,
+      "dato": categoria,
+      "msn" :  "Categoria  editado con exito"
+    });
+    return;
+    
+  });
+});
+
+router.patch('/categoria',(req,res)=>{
+  let act=req.body;
+  let id=req.params.id;
+  User.findByIdAndUpdate(id,act).exec(()=>{
+      res.json({
+          message:"dato actualizado"
+      });
+  });
+});
+
+
+router.delete('/:id',(req,res)=>{
+  let id=req.params.id;
+  User.findByIdAndRemove(id).exec(()=>{
+      res.json({
+          message:"usuario eliminado"
+      });
+  });
+});
+
+
+
+router.put(/categoria\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  var keys  = Object.keys(req.body);
+  var oficialkeys = ['nombre', 'precio', 'descripcion'];
+  var result = _.difference(oficialkeys, keys);
+  if (result.length > 0) {
+    res.status(400).json({
+      "msn" : "nose puede actualizar error  utilice el formato patch"
+    });
+    return;
+  }
+
+  var categoria = {
+    tienda : req.body.tienda,
+    nombre : req.body.nombre,
+    precio : req.body.precio,
+    descripcion : req.body.descripcion,
+    foto : req.body.foto
+
+  };
+  Categoria.findOneAndUpdate({_id: id}, categoria, (err, params) => {
+      if(err) {
+        res.status(500).json({
+          "msn": "No se pudo actualizar los datos"
+        });
+        return;
+      }
+      res.status(200).json({
+        "resp": 200,
+        "dato": categoria,
+        "msn" :  "categoria  editado con exito"
+      });
+      return;
+  });
+});
+
 router.post("/cliente",  (req, res) => {
 
-
+  
   var data = req.body;
   data ["registerdate"] = new Date();
   var newcliente = new Cliente(data);
@@ -262,7 +491,6 @@ router.post("/cliente",  (req, res) => {
     });
   });
 });
-
 router.get("/cliente",(req, res) => {
   var skip = 0;
   var limit = 10;
@@ -288,7 +516,7 @@ router.get("/cliente",(req, res) => {
 
 /*router.get("/cliente", (req, res, ) =>{
   Cliente.find({}).exec((error, docs) => {
-
+    
     res.status(200).json({
       "msn" : "No existe el pedido "
     });
@@ -310,7 +538,7 @@ router.get(/cliente\/[a-z0-9]{1,}$/, (req, res) => {
   })
 });
 
-//elimina un cliente  ==> funciona
+//elimina un cliente
 router.delete(/cliente\/[a-z0-9]{1,}$/, (req, res) => {
   var url = req.url;
   var id = url.split("/")[2];
@@ -320,7 +548,6 @@ router.delete(/cliente\/[a-z0-9]{1,}$/, (req, res) => {
         });
   });
 });
-
 //Actualizar solo x elementos
 router.patch(/cliente\/[a-z0-9]{1,}$/, (req, res) => {
   var url = req.url;
@@ -328,7 +555,6 @@ router.patch(/cliente\/[a-z0-9]{1,}$/, (req, res) => {
   var keys = Object.keys(req.body);
   var cliente = {
     nombre : req.body.nombre,
-    apellidos : req.body.apellidos,
     ci : req.body.ci,
     telefono : req.body.telefono,
     email : req.body.email,
@@ -350,13 +576,12 @@ router.patch(/cliente\/[a-z0-9]{1,}$/, (req, res) => {
       return;
   });
 });
-
 //Actualiza los datos del cliente
 router.put(/cliente\/[a-z0-9]{1,}$/, (req, res) => {
   var url = req.url;
   var id = url.split("/")[2];
   var keys  = Object.keys(req.body);
-  var oficialkeys = ['nombre', 'apellidos','ci', 'telefono', 'email',];
+  var oficialkeys = ['nombre', 'ci', 'telefono', 'email',];
   var result = _.difference(oficialkeys, keys);
   if (result.length > 0) {
     res.status(400).json({
@@ -366,7 +591,6 @@ router.put(/cliente\/[a-z0-9]{1,}$/, (req, res) => {
   }
   var cliente = {
     nombre : req.body.nombre,
-    apellidos : req.body.apellidos,
     ci : req.body.ci,
     telefono : req.body.telefono,
     email : req.body.email,
@@ -388,260 +612,339 @@ router.put(/cliente\/[a-z0-9]{1,}$/, (req, res) => {
   });
 });
 
-/*CARGAR IMAGENES*/
+//insertar datos de producto
+router.post("/producto",  (req, res) => {
 
-router.post(/productoimg\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  upload(req, res, (err) => {
-    if (err) {
-      res.status(500).json({
-        "msn" : "No se ha podido subir la imagen"
-      });
-    } else {
-      var ruta = req.file.path.substr(6, req.file.path.length);
-      console.log(ruta);
-      var img = {
-        idProducto: req.body.idProducto,
-        name : req.file.originalname,
-        physicalpath: req.file.path,
-        relativepath: "http://localhost:8000" + ruta
-      };
-      var imgData = new Img(img);
-      imgData.save().then( (infoimg) => {
-        //content-type
-        //Update User IMG
-        var producto = {
-          fotolugar: new Array()
-        }
-        Producto.findOne({_id:id}).exec( (err, docs) =>{
-          //console.log(docs);
-          var data = docs.fotolugar;
-          console.log('data ', data);
-
-          var aux = new  Array();
-          if (data.length == 1 && data[0] == "") {
-            Producto.fotolugar.push("/api/v1.0/productoimg/" + infoimg._id)
-          } else {
-            aux.push("/api/v1.0/productoimg/" + infoimg._id);
-            data = data.concat(aux);
-            Producto.fotolugar = data;
-          }
-          Producto.findOneAndUpdate({_id : id}, producto, (err, params) => {
-              if (err) {
-                res.status(500).json({
-                  "msn" : "error en la actualizacion del usuario"
-                });
-                return;
-              }
-              res.status(200).json(
-                req.file
-              );
-              return;
-          });
-        });
-      });
-    }
+  
+  var data = req.body;
+  data ["registerdate"] = new Date();
+  var newproducto = new Producto(data);
+  newproducto.save().then((rr) =>{
+    res.status(200).json({
+      "resp": 200,
+      "dato": newproducto,
+      "msn" :  "producto  agregado con exito"
+    });
+  });
+});
+router.get("/producto", (req, res, next) =>{
+  Producto.find({}).populate("categoria").populate("cliente").populate("tienda").exec((error, docs) => {
+    res.status(200).json(docs);
   });
 });
 
-/*GET IMgen*/
-router.get(/productimg\/[a-z0-9]{1,}$/, (req, res) => {
+router.get(/producto\/[a-z0-9]{1,}$/, (req, res) => {
   var url = req.url;
   var id = url.split("/")[2];
-  console.log(id)
-  Img.findOne({_id: id}).exec((err, docs) => {
-    if (err) {
-      res.status(500).json({
-        "msn": "Sucedio algun error en el servicio"
+  Producto.findOne({_id : id}).exec( (error, docs) => {
+    if (docs != null) {
+        res.status(200).json(docs);
+        return;
+    }
+
+    res.status(200).json({
+
+        "array_texto":
+          {
+            "texto":"<b>producto</b>",
+            "texto":"registrado con exito"
+          }
+
+
+    });
+  })
+});
+//elimina una producto
+router.delete('/producto/:id', (req, res,) => {
+  var idProducto = req.params.id;
+
+  Producto.findByIdAndRemove(idProducto).exec()
+      .then(() => {
+          res.json({
+              message: "producto eliminado"
+          });
+      }).catch(err => {
+          res.status(500).json({
+              error: err
+          });
+      });
+
+
+});
+//Actualizar solo x elementos
+router.patch(/producto\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  var keys = Object.keys(req.body);
+  var producto = {};
+  for (var i = 0; i < keys.length; i++) {
+    producto[keys[i]] = req.body[keys[i]];
+  }
+  console.log(producto);
+  Producto.findOneAndUpdate({_id: id}, producto, (err, params) => {
+      if(err) {
+        res.status(500).json({
+          "msn": "Error no se pudo actualizar los datos"
+        });
+        return;
+      }
+      res.status(200).json({
+        "resp": 200,
+        "dato": producto,
+        "msn" :  "producto  editado con exito"
       });
       return;
-    }
-    //regresamos la imagen deseada
-    var img = fs.readFileSync("./" + docs.physicalpath);
-    //var img = fs.readFileSync("./public/avatars/img.jpg");
-    res.contentType('image/jpeg');
-    res.status(200).send(img);
   });
 });
-
-//prueba lab Imagenes
-router.post('/prueba', (req, res)=> {
-  if(req.body.name == "" && req.body.email == ""){
+//Actualiza los datos del producto
+router.put(/producto\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  var keys  = Object.keys(req.body);
+  var oficialkeys = ['idmenu', 'idtienda', 'cantidad', 'idcliente', 'lat', 'lon', 'pagototal'];
+  var result = _.difference(oficialkeys, keys);
+  if (result.length > 0) {
     res.status(400).json({
-      "msn" : "formato incorrecto"
+      "msn" : "Existe un error en el formato de envio puede hacer uso del metodo patch si desea editar solo un fragmentode la informacion"
     });
     return;
   }
-  var prueba = {
-    title : req.body.title,
-    descripcion : req.body.descripcion, //descripcion a nombre
-    image : ""
+
+  var Producto = {
+    menu : req.body.idmenu,
+    tienda : req.body.idtienda,
+    cliente : req.body.idcliente,
+    lugar_envio : req.body.lugar_envio,
+    cantidad : req.body.cantidad,
+    precio : req.body.precio,
+    pagototal : req.body.pagototal
   };
-  var pruebaData = new Prueba(prueba);
-  pruebaData.save().then( (rr)=>{
-    req.status(200).json({
-      "id" : rr._id,
-      "msn" : "Comprador registrado"
+  Producto.findOneAndUpdate({_id: id}, producto, (err, params) => {
+      if(err) {
+        res.status(500).json({
+          "msn": "Error no se pudo actualizar los datos de la producto"
+        });
+        return;
+      }
+      res.status(200).json({
+        "resp": 200,
+        "dato": producto,
+        "msn" :  "producto  editado con exito"
+      });
+      return;
+  });
+});
+//insertar un nuevo usuario en la  base de datos
+router.post('/users', function(req, res, next) {
+  const datos = {
+    nombre: req.body.Nombre,
+    ci: req.body.Ci,
+    telefono: req.body.Telefono,
+    email: req.body.Email,
+    password: req.body.Password,
+    };
+  var modelUsers = new Users(datos);
+
+  modelUsers.save().then( result => {
+    res.json({
+      message: "usuario registrado  con exito "
+    });
+  })
+  .catch(err => {
+    res.status(500).json({
+        erroikr: err
+    })
+  });
+});
+//muestra todos los usuarios existente de la tabla
+router.get("/users", (req, res, next) =>{
+  Users.find({}).exec((error, docs) => {
+    res.status(200).json(docs);
+  });
+});
+//muestra los usuarios por su id
+router.get(/users\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  Users.findOne({_id : id}).exec( (error, docs) => {
+    if (docs != null) {
+        res.status(200).json(docs);
+        return;
+    }
+
+    res.status(200).json({
+      "msn" : "No existe el usuario "
     });
   });
 });
 
-router.get('/prueba',(req,res)=>{
-  var params = req.query;
-  console.log(params);var limit=100;
-  if(params.limit != null){
-    limit = parseInt(params.limit);
-  }
-  var order = -1;
-  if (params.order != null){
-    if (params.order == "desc"){
-      order = -1;
-    }else if(params.order == "asc"){
-      order = 1;
-    }
-  }
-  var skip = 0;
-  if (params.skip != null){
-    skip = parseInt(params.skip);
-  }
-  Prueba.find({}).limit(limit).sort({_id:order}).skip(skip).exec((err, docs)=>{
-    res.status(200).json(
-      {
-        data:docs
-      }
-  );
-  });
-});
-
-router.delete(/\/[a-z0-9]{1,}$/,(req,res)=>{
-  var url = req.url;
-  var id = url.split("/")[1];
-  Prueba.find({_id : id}).remove().exec((err,docs)=>{
-    req.status(200).json(docs);
-  });
-});
-
-var storage = multer.diskStorage({
-  destination: "./public/avatarspr",
-  filename: function (req, file,cb){
-    console.log("-------------");
-    console.log(file);
-    cb(null, "IMG_" + Date.now() + ".jpg");
-  }
-});
-
-var upload = multer({
-  storage: storage
-}).single("img");;
-
-router.post(/pruebalimg\/[a-z0-9]{1,}$/, (req, res) => {
+//elimina  usuario
+router.delete(/users\/[a-z0-9]{1,}$/, (req, res) => {
   var url = req.url;
   var id = url.split("/")[2];
-  upload(req, res, (err) => {
-    if (err) {
-      res.status(500).json({
-        "msn" : "No se ha podido subir la imagen"
-      });
-    } else {
-      var ruta = req.file.path.substr(6, req.file.path.length);
-      console.log(ruta);
-      var limg = {
-        idprueba: id,
-        name : req.file.originalname,
-        physicalpath: req.file.path,
-        relativepath: "http://localhost:8000" + ruta
-      };
-      var limgData = new Limg(limg);
-      limgData.save().then( (infolimg) => {
-        //content-type
-        //Update User IMG
-        var prueba = {
-          image: new Array()
-        }
-        Prueba.findOne({_id:id}).exec( (err, docs) =>{
-          //console.log(docs);
-          var data = docs.image;
-          var aux = new  Array();
-          if (data.length == 1 && data[0] == "") {
-            prueba.image.push("/api/v1.0/pruebalimg/" + infolimg._id)
-          } else {
-            aux.push("/api/v1.0/pruebalimg/" + infolimg._id);
-            data = data.concat(aux);
-            prueba.image = data;
-          }
-          Prueba.findOneAndUpdate({_id : id}, prueba, (err, params) => {
-              if (err) {
-                res.status(500).json({
-                  "msn" : "error en la actualizacion del usuario"
-                });
-                return;
-              }
-              res.status(200).json(
-                req.file
-              );
-              return;
-          });
+  Users.find({_id : id}).remove().exec( (err, docs) => {
+      res.status(200).json(docs);
+  });
+});
+//Actualizar solo x elementos
+router.patch(/users\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  var keys = Object.keys(req.body);
+  var users = {};
+  for (var i = 0; i < keys.length; i++) {
+    users[keys[i]] = req.body[keys[i]];
+  }
+  console.log(users);
+  Users.findOneAndUpdate({_id: id}, users, (err, params) => {
+      if(err) {
+        res.status(500).json({
+          "msn": "Error no se pudo actualizar los datos"
         });
-      });
-    }
+        return;
+      }
+      res.status(200).json(params);
+      return;
+  });
+});
+//Actualiza los datos del Usuario
+router.put(/users\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  var keys  = Object.keys(req.body);
+  var oficialkeys = ['Nombre', 'Ci', 'Telefono', 'Email', 'Password', 'Tipo_Usuario'];
+  var result = _.difference(oficialkeys, keys);
+  if (result.length > 0) {
+    res.status(400).json({
+      "msn" : "Existe el usuario"
+    });
+    return;
+  }
+
+  var users = {
+    nombre: req.body.nombre,
+    ci: req.body.ci,
+    telefono: req.body.telefono,
+    email: req.body.email,
+    password: req.body.password,
+     };
+  Users.findOneAndUpdate({_id: id}, users, (err, params) => {
+      if(err) {
+        res.status(500).json({
+          "msn": "Error no se pudo actualizar los datos del usuario"
+        });
+        return;
+      }
+      res.status(200).json(params);
+      return;
   });
 });
 
-router.get(/pruebalimg\/[a-z0-9]{1,}$/, (req, res) => {
-  var url = req.url;
-  var id = url.split("/")[2];
-  console.log(id)
-  Limg.findOne({_id: id}).exec((err, docs) => {
+
+
+
+
+router.post("/detalle",  (req, res) => {
+
+  //Ejemplo de validacion
+  var data = req.body;
+  data ["registerdate"] = new Date();
+  var newdetalle = new Detalle(data);
+  newdetalle.save().then((rr) =>{
+    res.status(200).json({
+      "resp": 200,
+      "dato": newtienda,
+      "id" : rr._id,
+      "msn" :  "pedidos agregado con exito"
+    });
+  });
+});
+router.get("/productos",(req, res) => {
+  var skip = 0;
+  var limit = 10;
+  if (req.query.skip != null) {
+    skip = req.query.skip;
+  }
+
+  if (req.query.limit != null) {
+    limit = req.query.limit;
+  }
+  Producto.find({}).skip(skip).limit(limit).exec((err, docs) => {
     if (err) {
       res.status(500).json({
-        "msn": "Sucedio algun error en el servicio"
+        "msn" : "Error en la db"
       });
       return;
     }
-    //regresamos la imagen deseada
-    var limg = fs.readFileSync("./" + docs.physicalpath);
-    //var img = fs.readFileSync("./public/avatars/img.jpg");
-    res.contentType('image/jpeg');
-    res.status(200).send(limg);
+    res.json({
+      result : docs
   });
 });
 
-//buscador de productos
-router.get('/filtro_pro', (req, res, next)=>{
-  var params = req.query;
-  var nombre = params.nombre;
-  console.log("-->"+nombre);
-  Producto.find({$or : [{nombre : nombre }] }).exec((err, docs) =>{
-    if (docs){
-      res.status(200).json({
-        info: docs
-      });
-    }
-    else {
-      res.status(201).json({
-        "msn" : "no existe producto con ese nombre"
-      });
-    }
-  })
-});
 
-router.get('/filtro_pro', (req, res, next)=>{
-  var params = req.query;
-  var propietario = params.propietario;
-  console.log("-->"+propietario);
-  Producto.find({$or : [{propietario : propietario }] }).exec((err, docs) =>{
-    if (docs){
-      res.status(200).json({
-        info: docs
-      });
+
+//mostrar  por id detalle
+router.get(/producto\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  Producto.findOne({_id : id}).exec( (error, docs) => {
+    if (docs != null) {
+        res.status(200).json(docs);
+        return;
     }
-    else {
-      res.status(201).json({
-        "msn" : "no existe producto con ese nombre de propietario"
-      });
-    }
+
+    res.json({
+      result : docs    });
   })
 });
+//elimina un tienda
+router.delete('/detalle/:id',  (req, res, )=> {
+  var idDetalle = req.params.id;
+
+  Producto.findByIdAndRemove(idProducto).exec()
+      .then(() => {
+          res.json({
+              message: "Producto eliminado"
+          });
+      }).catch(err => {
+          res.status(500).json({
+              error: err
+          });
+      });
+
+
+});
+//Actualizar solo x elementos
+router.patch(/pedidos\/[a-z0-9]{1,}$/, (req, res) => {
+  var url = req.url;
+  var id = url.split("/")[2];
+  var keys = Object.keys(req.body);
+  var pedidos = {};
+  for (var i = 0; i < keys.length; i++) {
+    pedidos[keys[i]] = req.body[keys[i]];
+  }
+  console.log(tienda);
+  Pedidos.findOneAndUpdate({_id: id}, pedidos, (err, params) => {
+      if(err) {
+        res.status(500).json({
+          "msn": "Error no se pudo actualizar los datos"
+        });
+        return;
+      }
+      
+      res.status(200).json({
+        "resp": 200,
+        "dato": producto,
+        "msn" :  "producto editado con exito"
+      });
+      return;
+    
+      });
+  });
+});
+// abriendo chats
+//agregar sockets par ala conversacion de  reennvio de informacion
+//control de sockets agregar  
+
 
 module.exports = router;

@@ -1,23 +1,33 @@
-const mongoose = require("../connect");
-var mon = require('mongoose');
-var Schema = mon.Schema;
+const mongoose = require("../connect");//pedidos
+//var ObjectId = mongoose.Schema.Types.ObjectId;
+const Schema = mongoose.Schema;
+
 var productoSchema = new Schema({
+
   cliente: {
-    type: Schema.Types.ObjectId,
-    ref: "Cliente"},
-  nombre : String,
-  nit : String,
-  propietario : String,
-  calle : String,
-  cantidad : Number,
-  lat : String,
-  lon : String,
-  Fecha_Registro: {
-    type: Date, default: Date.now
+  type: Schema.Types.ObjectId,
+  ref: "Cliente"
   },
-  fotolugar : String,
-  precio : Number,
-  descripcion : String
+
+  tienda:{
+    type: Schema.Types.ObjectId,
+    ref: "Tienda"
+  },
+  categoria : {
+    type: Schema.Types.ObjectId,
+    ref: "Categoria"
+  },
+  lugar_envio: Number,
+  precios : Number,
+  cantidad :Number,
+  Fecha_Registro:
+    {
+      type:Date,
+      default: Date.now()
+
+    },
+
+pago_total : Number,
 });
 var producto = mongoose.model("Producto", productoSchema);
 module.exports = producto;
