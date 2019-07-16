@@ -1124,7 +1124,7 @@ date: {type:Date,default:Date.now()}
 
 /*
 
-//get product 
+//get product
   route.get("/producto", (req, res, next) => {
       var params = req.query;
 
@@ -1179,6 +1179,50 @@ date: {type:Date,default:Date.now()}
       })
     }
     });
+
+/// get productos
+    // muestra la peticin de acuerdo a un paraetro de busqueda
+      route.get("/producto2/search=:srt", (req, res, next) => {
+        console.log(req.params)
+        let search =req.params.srt
+
+        Producto.find({estado:new RegExp(search, 'i')}).exec( (error, docs) => {
+          res.status(200).json(
+            {
+              info: docs
+            }
+          );
+        })
+    });
+
+
+
+
+    // busqueda por _id //////
+    route.get('/productoid/:id', (req, res) => {
+      var idh = req.params.id;
+      console.log(idh)
+      Producto.findById({_id:idh}).exec((err, docs) => {
+        if (err) {
+          res.status(500).json({
+            "msn": "Hay algun error en la busqueda"
+
+          });
+          return;
+        }
+        res.status(200).send(docs);
+      });
+    });
+    ///////////////// fin productos////////////////
+
+
+
+
+
+
+
+
+
 
 
 */
