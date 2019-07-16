@@ -1049,7 +1049,7 @@ router.patch(/pedidos\/[a-z0-9]{1,}$/, (req, res) => {
 //metod get for images
  */
 
-
+/*
  route.get(/productoimg\/[a-z0-9]{1,}$/, (req, res) => {
    var url = req.url;
    var id = url.split("/")[2];
@@ -1069,10 +1069,58 @@ router.patch(/pedidos\/[a-z0-9]{1,}$/, (req, res) => {
    });
  });
 
-
+*/
 /*
 
 
+
+
+var productoid;
+
+
+  route.post("/producto", (req, res) => {
+    //Ejemplo de validacion
+  console.log("request; ",req.body)
+
+    var producto = {
+      city: req.body.city,
+      categoria: req.body.categoria,
+      estado : req.body.estado,
+
+      nombre : req.body.nombre,
+      precio : req.body.precio,
+      cantidad : req.body.cantidad,
+      descripcion : req.body.descripcion,
+      gallery : "",
+      contacto: req.body.contacto
+    };
+
+
+  var productoData = new Producto(producto)
+
+    productoData.save().then( (rr) => {
+      //content-type
+      productoid=rr._id;                           //variable que guarda el id de producto
+      res.status(200).json({
+        "id" : rr._id,
+        "msn" : "producto registrado con exito "
+      });
+    });
+  });
+/*
+city: String,
+categoria: String,
+estado :String,
+nombre : String,
+precio : Number,
+cantidad : Number,
+contacto : Number,
+descripcion : String,
+  gallery : Array,
+
+date: {type:Date,default:Date.now()}
+
+*/
 
 */
 
