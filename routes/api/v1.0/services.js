@@ -1122,6 +1122,65 @@ date: {type:Date,default:Date.now()}
 
 */
 
+/*
+
+//get product 
+  route.get("/producto", (req, res, next) => {
+      var params = req.query;
+
+      var datos = Producto.find({precio: params.precio});
+      console.log(datos);
+      var city = params.city;
+      var categoria = params.categoria;
+      var estado = params.estado;
+      var nombre = params.nombre;
+      var precio = params.precio;
+      var cantidad= params.cantidad;
+      var over = params.over;
+
+      if (precio == undefined && over == undefined) {
+  // filtra los datos que tengan en sus atributos lat y lon null;
+  Producto.find({lat:{$ne:null},lon:{$ne:null}}).exec( (error, docs) => {
+  res.status(200).json(
+    {
+      info: docs
+    }
+  );
+  })
+  return;
+  }
+  if (over == "equals") {
+      Producto.find({$and:[{city:city},{categoria:categoria},{estado:estado},{precio:precio},{cantidad:cantidad}]}).exec( (error, docs) => {
+        res.status(200).json(
+          {
+            info: docs
+          }
+        );
+        console.log("----------------estos sons iguales-----------------")
+      })
+      return;
+    }else if ( over == "true") {
+        console.log("----------------estos sons mayores igual-----------------")
+      Producto.find({$and:[{city:city},{categoria:categoria},{estado:estado},{precio:{$gte:precio}},{cantidad:{$gte:cantidad}}]}).exec( (error, docs) => {
+        res.status(200).json(
+          {
+            info: docs
+          }
+        );
+      })
+    }else if (over == "false") {
+        console.log("----------------estos son los menores/igual-----------------")
+      Producto.find({$and:[{city:city},{categoria:categoria},{estado:estado},{precio:{$lte:precio}},{cantidad:{$lte:cantidad}}]}).exec( (error, docs) => {
+        res.status(200).json(
+          {
+            info: docs
+          }
+        );
+      })
+    }
+    });
+
+
 */
 
 
