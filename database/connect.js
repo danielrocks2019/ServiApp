@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
-mongoose.connect("mongodb://192.168.1.116:27017/chat");
-mongoose.connect("mongodb://localhost:27017/Tienda", {
+mongoose.connect("mongodb://192.168.43.72:27017/chat"); //ip wifi 192.168.1.116
+mongoose.connect("mongodb://192.168.43.72:27017/Tienda", {
   useNewUrlParser: true
 }).then(()=>{
   console.log('connexion a mongodb existosa');

@@ -113,7 +113,7 @@ router.post(/tiendaimg\/[a-z0-9]{1,}$/, (req, res) => {
         idtienda: req.body.idtienda,
         name : req.file.originalname,
         physicalpath: req.file.path,
-        relativepath: "http://localhost:9000" + ruta
+        relativepath: "http://localhost:7777" + ruta
       };
       var imgData = new Img(img);
       imgData.save().then( (infoimg) => {
