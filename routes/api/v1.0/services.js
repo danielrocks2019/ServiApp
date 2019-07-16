@@ -43,7 +43,7 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({
   storage: storage,
-  
+
 })
 
 router.post("/login", (req, res, next) => {
@@ -200,7 +200,7 @@ router.get("/Tienda",  (req, res) => {
       res.status(500).json({
         "msn" : "Error en la db"
       });
-      
+
       return;
     }
     res.json({
@@ -223,7 +223,7 @@ router.get(/tienda\/[a-z0-9]{1,}$/, (req, res) => {
 
   res.json({
     result : docs
-  
+
     });
   })
 });
@@ -285,7 +285,7 @@ router.put(/tienda\/[a-z0-9]{1,}$/, verifytoken,(req, res) => {
     propiedad : req.body.Propiedad,
     calle : req.body.Calle,
     telefono : req.body.Telefono,
-    lat : req.body.Lat, 
+    lat : req.body.Lat,
     lon : req.body.Lon
 
   };
@@ -365,7 +365,7 @@ router.delete('/categoria/:id', (req, res,) => {
 
   Categoria.findByIdAndRemove(idCategoria).exec()
       .then(() => {
-         
+
       res.status(200).json({
         "resp": 200,
         "msn" :  "eliminado con exito"
@@ -373,7 +373,7 @@ router.delete('/categoria/:id', (req, res,) => {
       }).catch(err => {
           res.status(500).json({
               error: err
-         
+
             });
 
       });
@@ -414,7 +414,7 @@ router.patch("/categoria",(req, res) => {
       "msn" :  "Categoria  editado con exito"
     });
     return;
-    
+
   });
 });
 
@@ -479,7 +479,7 @@ router.put(/categoria\/[a-z0-9]{1,}$/, (req, res) => {
 
 router.post("/cliente",  (req, res) => {
 
-  
+
   var data = req.body;
   data ["registerdate"] = new Date();
   var newcliente = new Cliente(data);
@@ -516,7 +516,7 @@ router.get("/cliente",(req, res) => {
 
 /*router.get("/cliente", (req, res, ) =>{
   Cliente.find({}).exec((error, docs) => {
-    
+
     res.status(200).json({
       "msn" : "No existe el pedido "
     });
@@ -615,7 +615,7 @@ router.put(/cliente\/[a-z0-9]{1,}$/, (req, res) => {
 //insertar datos de producto
 router.post("/producto",  (req, res) => {
 
-  
+
   var data = req.body;
   data ["registerdate"] = new Date();
   var newproducto = new Producto(data);
@@ -931,20 +931,123 @@ router.patch(/pedidos\/[a-z0-9]{1,}$/, (req, res) => {
         });
         return;
       }
-      
+
       res.status(200).json({
         "resp": 200,
         "dato": producto,
         "msn" :  "producto editado con exito"
       });
       return;
-    
+
       });
   });
 });
 // abriendo chats
 //agregar sockets par ala conversacion de  reennvio de informacion
-//control de sockets agregar  
+//control de sockets agregar
+
+
+ //////////////////////////////SERVICES BY AMILKAR /////////////////////////////////////////
+ /*
+
+ const Producto = require('../../../database/collections/productos')
+ const Img = require('../../../database/collections/img')
+ const express = require('express')
+
+
+ //esta variables toma el valor de la IP
+ const HOST = require('../../../database/collections/HOST')
+
+ //////////////////////// multer para imagenes
+ const multer = require('multer');
+
+ const fs = require('fs')
+
+ const route = express.Router()
+
+ // metodos de peticion GET, POTS, PUT, DELETE
+
+ route.get('/', (req, res) =>{
+     res.send({ menssage:'SERVICIO API-RES TIENDA MOVIL'})
+ })
+
+
+ var storage = multer.diskStorage({
+     destination: "./public/avatars",
+     filename: function (req, file, cb) {
+       console.log("-------------------------");
+       console.log(file);
+       cb(null, "IMG_" + Date.now() + ".jpg");
+     }
+   });
+   var upload = multer({
+     storage: storage
+   }).single("img");;
+
+
+ route.post('/productoimg', (req, res) => {
+     //var url = req.url;
+     //console.log(url);
+     var id = productoid;
+     upload(req, res, (err) => {
+       if (err) {
+         res.status(500).json({
+           "msn" : "No se ha podido subir la imagen"
+         });
+       } else {
+         var ruta = req.file.path.substr(6, req.file.path.length);
+         console.log(ruta);
+         var img = {
+           idproducto: id,
+           name : req.file.originalname,
+           physicalpath: req.file.path,
+           relativepath: `${HOST}:7777`
+           //////////////////////////////7////////////relativepath: `${HOST}:4030`
+                         //  http://192.168.1.5:4030
+         };
+         var imgData = new Img(img);
+         imgData.save().then( (infoimg) => {
+           //content-type
+           //Update User IMG
+           var producto = {
+             gallery: new Array()
+           }
+           Producto.findOne({_id:id}).exec( (err, docs) =>{
+         console.log(docs);
+         var data = docs.gallery;
+         var aux = new  Array();
+         if (data.length == 1 && data[0] == "") {
+           producto.gallery.push(`${HOST}:7777/api/v1.0/productoimg/` + infoimg._id)
+
+         } else {
+           aux.push(`${HOST}:7777/api/v1.0/productoimg/` + infoimg._id);
+
+           data = data.concat(aux);
+           producto.gallery = data;
+         }
+         ////////////////////////////////////////////////////////////////Producto.useFindAndModify({_id : id}, producto, (err, params) => {
+         Producto.findOneAndUpdate({_id : id}, producto, (err, params) => {
+
+           //useFindAndModify
+             if (err) {
+               res.status(500).json({
+                 "msn" : "error en la actualizacion del usuario"
+               });
+               return;
+             }
+             res.status(200).json(
+               req.file
+             );
+             return;
+         });
+       });
+     });
+   }
+ });
+ });
+
+ */
+
 
 
 module.exports = router;
