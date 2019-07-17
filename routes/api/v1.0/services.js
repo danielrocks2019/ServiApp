@@ -4,7 +4,7 @@ var io = require('socket.io');
 var router = express.Router();
 var fs = require('fs');
 var _ = require("underscore");
-
+var valid = require("../utils/valid");
 var Img = require("../../../database/collections/img");
 
 var Categoria = require("../../../database/collections/categoria");
@@ -744,6 +744,20 @@ router.post('/users', function(req, res, next) {
     password: req.body.Password,
     };
   var modelUsers = new Users(datos);
+
+  if(!valid.checkparams(modelUsers, datos)){
+    res.status(300).json({
+      msn : "parametros incorrectos"
+    })
+    return;
+  }
+  if(!valid.checkfullname(datos.name)){
+    res.status(300).json({
+      msn : "El parametro name debe contener al menos 3 caracteres"
+    })
+    return;
+  }
+  
 
   modelUsers.save().then( result => {
     res.json({
