@@ -43,6 +43,21 @@ var valid = {
       return true;
     },
   
+    checknumber : function (number){
+        if(isNaN(number)){
+          return false;
+        }
+        return true;
+      },
+  
+    checkdetails : function (details){
+      details.toString();
+      if(details.length < 3){
+        return false;
+      }
+      return true;
+  
+    },
   };
   module.exports = valid;
   
