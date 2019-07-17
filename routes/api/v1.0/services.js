@@ -757,6 +757,11 @@ router.post('/users', function(req, res, next) {
     })
     return;
   }
+  if(!valid.checkpassword(datos.password)){
+    res.status(300).json({
+      msn : "La contraseña debe contener al menos 8 caracteres y al menos un caracter debe ser numerico"
+    })
+  }
   
 
   modelUsers.save().then( result => {
