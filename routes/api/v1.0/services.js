@@ -762,7 +762,16 @@ router.post('/users', function(req, res, next) {
       msn : "La contraseña debe contener al menos 8 caracteres y al menos un caracter debe ser numerico"
     })
   }
-  
+  if(!valid.checkcel(datos.telefono)){
+    res.status(300).json({
+      msn : "El parametro cel debe contener 8 numeros"
+    })
+  }
+  if(!valid.checkemail(datos.email)){
+    res.status(300).json({
+      msn : "email invalido"
+    })
+  }
 
   modelUsers.save().then( result => {
     res.json({
