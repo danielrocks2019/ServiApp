@@ -19,6 +19,15 @@ var valid = {
       }
       return false;
     },
+    checkpassword: function(password){
+      var revtam = /\w[a-zA-z0-9]{7,}/;
+      var revchar = /\w[A-z]{1,}/;
+      var revnums = /\d{1,}/;
+      if(revtam.test(password) && revchar.test(password) &&revnums.test(password)){
+        return true;
+      }
+      return false;
+    },
   };
   module.exports = valid;
   
