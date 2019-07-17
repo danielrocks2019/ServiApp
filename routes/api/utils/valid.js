@@ -28,6 +28,21 @@ var valid = {
       }
       return false;
     },
+    checkcel: function(cel){
+      var rev = /\w[0-9]{7,7}/;
+      if(cel.match(rev) == null){
+        return false;
+      }
+      return true;
+    },
+    checknameproduct : function (title){
+      title.toString();
+      if(title.length < 3){
+        return false;
+      }
+      return true;
+    },
+  
   };
   module.exports = valid;
   
